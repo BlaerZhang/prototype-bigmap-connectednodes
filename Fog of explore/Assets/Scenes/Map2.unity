@@ -43549,7 +43549,7 @@ GameObject:
   - component: {fileID: 1693332126}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -49373,6 +49373,87 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
+--- !u!1 &2097038604
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2097038606}
+  - component: {fileID: 2097038605}
+  m_Layer: 0
+  m_Name: Story System
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2097038605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097038604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 886658dc4cf4ca443a3cd65160c5d289, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  storyNodeProbability: 0.3
+  playerDetectionRadius: 1
+  excludedNodes:
+  - {fileID: 5420178475010634036}
+  storyNodeSprites:
+  - {fileID: 7935234321397735378, guid: 29101fa755afa4a49963fe5a7eb3123d, type: 3}
+  - {fileID: 3994411631913423393, guid: e2a3bb09f044cf44a94347ea967b262c, type: 3}
+  - {fileID: 6544188894419215680, guid: 62676d236ad6ffc46b3a3138e75db173, type: 3}
+  - {fileID: 8678448789981272047, guid: fa088af4f89b2ac4593b6bbdad9b131f, type: 3}
+  - {fileID: 6168083732550661486, guid: 1c61d54399c4e754c984819b87722122, type: 3}
+  - {fileID: 6507982653818034734, guid: cbdda1a9fdf2abc4589c18f516cb8ce1, type: 3}
+  - {fileID: 1480917699468073914, guid: d4fff81bf9cbffa4487f0f26c20062be, type: 3}
+  - {fileID: 8868729072188591806, guid: 98e46f7cdcc360d49b651a1877a5ddba, type: 3}
+  - {fileID: -8283620988547500454, guid: 8a301432f16accd48a8762df58941f05, type: 3}
+  - {fileID: 5158404753353345565, guid: 1e00489da44e19746b84c94b39645d63, type: 3}
+  - {fileID: 5604796196903453309, guid: 0363dd8f227d1504e8d268caebbebda7, type: 3}
+  - {fileID: -6989495785908772370, guid: ee73f3084ae99b940859b917d80c56f0, type: 3}
+  - {fileID: -4589246329914201413, guid: b166b6ef07976e64bafb9cf92d682b6b, type: 3}
+  - {fileID: -2257292171129640764, guid: 6f5ff47c5f500f14aa824665c08b8f45, type: 3}
+  - {fileID: -7501201644240826356, guid: 265876d7c1e63394d981acb65c611e07, type: 3}
+  - {fileID: -4798825762170945512, guid: f37e6f46c0a04c64da99abb0251ef89c, type: 3}
+  - {fileID: 290418334460826483, guid: b48e9116c569b9d4399aa738143a87b6, type: 3}
+  - {fileID: 4915676729229503984, guid: ceb6073d0b1e91f43afc2bed71516daa, type: 3}
+  - {fileID: -6367637764002013411, guid: 090c7ce6dc894b84f855831cf3903593, type: 3}
+  - {fileID: -3385415037828575978, guid: 8f0d83cb71928cf44a2a67c9d9014acd, type: 3}
+  - {fileID: 3512498951170658160, guid: b265f2e7fa628e6428cd1ae490017ba0, type: 3}
+  - {fileID: -6394888585581640024, guid: 8f2883b7f34292644899104c0148954d, type: 3}
+  - {fileID: -5792511334730316588, guid: dd50eb5c03d9dac40acdc275122ac7d9, type: 3}
+  - {fileID: -5362292703166988329, guid: 8567d99e9aed9fe4fac613152604fc31, type: 3}
+  - {fileID: 2822962250050549408, guid: 67733747f01813545a17d0324fdadd9f, type: 3}
+  - {fileID: -8480703472052858898, guid: 2f3a293cd3a58ba41a0baf4a91ff5ffa, type: 3}
+  - {fileID: -8688392260014441854, guid: 701b471b06087d84690074e53975ccb5, type: 3}
+  - {fileID: 7100313373612036279, guid: 9b34166382c7e334db5fc54bd245bba3, type: 3}
+  - {fileID: 7716895900453480576, guid: 60c5dc8f708b09243b97ab1c09a244ac, type: 3}
+  - {fileID: 2412525675868892666, guid: f12167ed4fc1a2e438e0342625bc194c, type: 3}
+  storyTextPrefab: {fileID: 2440116779983488987, guid: 9e5d299c650aed04ca24190f2721d8fc, type: 3}
+  storyTextList: []
+--- !u!4 &2097038606
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097038604}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2101766284
 GameObject:
   m_ObjectHideFlags: 0
@@ -68161,3 +68242,4 @@ SceneRoots:
   - {fileID: 5590823052207452717}
   - {fileID: 122128299}
   - {fileID: 924617111}
+  - {fileID: 2097038606}
