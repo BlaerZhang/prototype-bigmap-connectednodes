@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SpriteRandomizerConfig
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::SpriteRandomizerConfig
+  parentObject: {fileID: 0}
+  spriteProbabilities:
+  - sprite: {fileID: 21300000, guid: 16ed6b2b56a7b43f596959ddd05a0d5b, type: 3}
+    probability: 5
+  - sprite: {fileID: 21300000, guid: c67963131d183403084347fbcac476d4, type: 3}
+    probability: 5
+  - sprite: {fileID: 21300000, guid: b1c60fa191556460881c95f318099ace, type: 3}
+    probability: 5
+  - sprite: {fileID: 21300000, guid: b3586a49450b743c1be112a80a98db85, type: 3}
+    probability: 5
+  - sprite: {fileID: 0}
+    probability: 80
