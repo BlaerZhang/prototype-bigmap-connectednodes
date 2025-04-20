@@ -8,9 +8,9 @@ public class MapCreatorTool : EditorWindow
     private GameObject pathParent;
     
     private Sprite nodeSprite;
-    private Material pathMaterial;
-    private Color pathColor = Color.white;
-    private float pathWidth = 0.5f;
+    private Material pathMaterial = default;
+    private Color pathColor = Color.black;
+    private float pathWidth = 0.1f;
     
     private MapNode selectedNodeA;
     private MapNode selectedNodeB;

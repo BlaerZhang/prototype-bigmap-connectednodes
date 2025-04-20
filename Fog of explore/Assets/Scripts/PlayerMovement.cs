@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using HUDIndicator;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("移动设置")]
@@ -17,7 +17,9 @@ public class PlayerMovement : MonoBehaviour
     private float currentT = 0f; // 当前在路径上的位置 (0-1)
     private int moveDirection = 1; // 1表示向前（从节点A到B），-1表示向后
     private bool isMoving = false;
+    private bool isClimbing = false;
     private bool isWatching = false;
+    public Transform target;
     
     // 精力系统
     private EnergySystem energySystem;
@@ -33,6 +35,7 @@ public class PlayerMovement : MonoBehaviour
     private FogOfWar fogOfWar;
 
     private GameObject visionMask;
+    
     
     private void Start()
     {
@@ -81,8 +84,8 @@ public class PlayerMovement : MonoBehaviour
         // 处理观察逻辑
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            isWatching = !isWatching;
-            if (isWatching)
+            isClimbing = !isClimbing;
+            if (isClimbing)
             {
                 // fogOfWar.visionRadius *= 3f;
                 visionMask.transform.localScale *= 2f;
@@ -94,6 +97,20 @@ public class PlayerMovement : MonoBehaviour
             }
             
             // fogOfWar.UpdateFogOfWar();
+        }
+
+        // 处理瞭望逻辑
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            isWatching = !isWatching;
+            if (isWatching)
+            {
+                target.GetComponent<IndicatorOffScreen>().enabled = true;
+            }
+            else
+            {
+                target.GetComponent<IndicatorOffScreen>().enabled = false;
+            }
         }
         
         // 计算移动距离并消耗精力

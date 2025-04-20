@@ -14,3 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp-Editor::SpriteRandomizerConfig
   parentObject: {fileID: 0}
   spriteProbabilities: []
+  addIndicator: 0
+  indicatorPrefab: {fileID: 0}
+  autoRegisterToManager: 1
+  minDistance: 0
+  maxDistance: 100
+  indicatorWidth: 32
+  indicatorHeight: 32
+  maintainAspectRatio: 1
+  sizeScale: 1
