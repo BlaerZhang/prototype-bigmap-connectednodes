@@ -97,6 +97,38 @@ public class MapCreatorTool : EditorWindow
             EditorGUILayout.Space();
         }
         
+        // 显示选中节点的操作选项
+        MapNode selectedNode = null;
+        if (Selection.activeGameObject != null)
+        {
+            selectedNode = Selection.activeGameObject.GetComponent<MapNode>();
+            if (selectedNode != null)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField($"选中节点: {selectedNode.nodeName}", EditorStyles.boldLabel);
+                
+                if (GUILayout.Button("删除节点及相连路径", GUILayout.Height(30)))
+                {
+                    DeleteNodeWithConnectedPaths(selectedNode);
+                }
+                
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.Space();
+            }
+        }
+        
+        // 显示批量清理功能
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        GUILayout.Label("批量清理工具", EditorStyles.boldLabel);
+        
+        if (GUILayout.Button("清理所有非法路径", GUILayout.Height(30)))
+        {
+            CleanInvalidPaths();
+        }
+        
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
+        
         // 显示选中节点间的操作选项
         if (selectedSceneNodes.Count == 2 && quickPathDeletionEnabled)
         {
@@ -906,6 +938,194 @@ public class MapCreatorTool : EditorWindow
             if (path != null)
             {
                 DestroyImmediate(path.gameObject);
+            }
+        }
+    }
+    
+    // 添加删除节点及相连路径的菜单项
+    [MenuItem("Tools/Map Creator/Delete Node With Connected Paths _#n")]
+    static void DeleteSelectedNodeWithPaths()
+    {
+        // 获取选中的对象
+        GameObject selected = Selection.activeGameObject;
+        if (selected != null)
+        {
+            MapNode node = selected.GetComponent<MapNode>();
+            if (node != null)
+            {
+                MapCreatorTool window = GetWindow<MapCreatorTool>();
+                window.DeleteNodeWithConnectedPaths(node);
+            }
+        }
+    }
+    
+    // 添加清理非法路径的菜单项
+    [MenuItem("Tools/Map Creator/Clean Invalid Paths _#i")]
+    static void CleanInvalidPathsMenu()
+    {
+        MapCreatorTool window = GetWindow<MapCreatorTool>();
+        window.CleanInvalidPaths();
+    }
+    
+    // 验证删除节点菜单项是否可用
+    [MenuItem("Tools/Map Creator/Delete Node With Connected Paths _#n", true)]
+    static bool ValidateDeleteSelectedNodeWithPaths()
+    {
+        // 仅当选中的是MapNode时该菜单项才可用
+        GameObject selected = Selection.activeGameObject;
+        return selected != null && selected.GetComponent<MapNode>() != null;
+    }
+    
+    // 验证删除路径菜单项是否可用
+    [MenuItem("Tools/Map Creator/Delete Selected Path _#d", true)]
+    static bool ValidateDeleteSelectedPath()
+    {
+        // 仅当选中的是MapPath时该菜单项才可用
+        GameObject selected = Selection.activeGameObject;
+        return selected != null && selected.GetComponent<MapPath>() != null;
+    }
+    
+    // 删除节点和与其相连的所有路径
+    private void DeleteNodeWithConnectedPaths(MapNode node)
+    {
+        if (node == null) return;
+        
+        // 查找所有与该节点相连的路径
+        List<MapPath> connectedPaths = FindPathsConnectedToNode(node);
+        
+        // 删除找到的路径
+        foreach (MapPath path in connectedPaths)
+        {
+            DestroyImmediate(path.gameObject);
+        }
+        
+        // 最后删除节点本身
+        DestroyImmediate(node.gameObject);
+        
+        Debug.Log($"已删除节点 {node.nodeName} 及与其相连的 {connectedPaths.Count} 条路径");
+        
+        // 刷新节点列表
+        RefreshNodeList();
+    }
+    
+    // 查找与指定节点相连的所有路径
+    private List<MapPath> FindPathsConnectedToNode(MapNode node)
+    {
+        List<MapPath> connectedPaths = new List<MapPath>();
+        MapPath[] allPaths = FindObjectsOfType<MapPath>();
+        
+        foreach (MapPath path in allPaths)
+        {
+            if (path.nodeA == node || path.nodeB == node)
+            {
+                connectedPaths.Add(path);
+            }
+        }
+        
+        return connectedPaths;
+    }
+    
+    // 清理所有非法路径（至少一端未连接到节点的路径）
+    private void CleanInvalidPaths()
+    {
+        MapPath[] allPaths = FindObjectsOfType<MapPath>();
+        int removedCount = 0;
+        
+        foreach (MapPath path in allPaths)
+        {
+            if (path.nodeA == null || path.nodeB == null)
+            {
+                DestroyImmediate(path.gameObject);
+                removedCount++;
+            }
+        }
+        
+        if (removedCount > 0)
+        {
+            Debug.Log($"已删除 {removedCount} 条非法路径");
+        }
+        else
+        {
+            Debug.Log("未发现非法路径");
+        }
+    }
+    
+    // 监听Unity的对象删除
+    [InitializeOnLoadMethod]
+    private static void RegisterEditorDeleteCallback()
+    {
+        // 添加对象删除事件的监听
+        EditorApplication.hierarchyChanged += OnHierarchyChanged;
+    }
+    
+    private static void OnHierarchyChanged()
+    {
+        // 由于该方法会频繁调用，使用一个标记来判断是否刚刚删除了节点
+        if (Event.current != null && Event.current.commandName == "Delete")
+        {
+            // 在下一帧检查是否有节点被删除
+            EditorApplication.delayCall += CheckForDeletedNodes;
+        }
+    }
+    
+    private static List<MapNode> previousNodes = new List<MapNode>();
+    
+    private static void CheckForDeletedNodes()
+    {
+        // 获取当前所有节点
+        MapNode[] currentNodes = Object.FindObjectsOfType<MapNode>();
+        List<MapNode> newNodesList = new List<MapNode>(currentNodes);
+        
+        // 如果是首次运行，就记录当前节点并返回
+        if (previousNodes.Count == 0)
+        {
+            previousNodes = newNodesList;
+            return;
+        }
+        
+        // 找出被删除的节点
+        List<MapNode> deletedNodes = new List<MapNode>();
+        foreach (MapNode prevNode in previousNodes)
+        {
+            if (!newNodesList.Contains(prevNode))
+            {
+                deletedNodes.Add(prevNode);
+            }
+        }
+        
+        // 更新节点列表
+        previousNodes = newNodesList;
+        
+        // 如果有节点被删除，则删除与之相连的路径
+        if (deletedNodes.Count > 0)
+        {
+            MapPath[] allPaths = Object.FindObjectsOfType<MapPath>();
+            List<MapPath> pathsToDelete = new List<MapPath>();
+            
+            // 找出所有与被删除节点相连的路径
+            foreach (MapPath path in allPaths)
+            {
+                foreach (MapNode deletedNode in deletedNodes)
+                {
+                    if (path.nodeA == deletedNode || path.nodeB == deletedNode)
+                    {
+                        if (!pathsToDelete.Contains(path))
+                        {
+                            pathsToDelete.Add(path);
+                        }
+                    }
+                }
+            }
+            
+            // 删除这些路径
+            foreach (MapPath path in pathsToDelete)
+            {
+                Object.DestroyImmediate(path.gameObject);
+            }
+            
+            if (pathsToDelete.Count > 0)
+            {
+                Debug.Log($"自动清理：删除了与被删除节点相连的 {pathsToDelete.Count} 条路径");
             }
         }
     }
