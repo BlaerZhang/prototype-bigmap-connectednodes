@@ -2,42 +2,50 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("移动设置")]
-    public float moveSpeed = 5f;
-    
-    [Header("控制设置")]
-    public bool useMouseControl = true;    // 是否启用鼠标控制
-    public float mouseControlDistance = 1f; // 鼠标方向影响的距离阈值
-    
-    // 路径移动状态
-    private MapNode currentNode = null;
-    private MapPath currentPath = null;
-    private float currentT = 0f; // 当前在路径上的位置 (0-1)
-    private int moveDirection = 1; // 1表示向前（从节点A到B），-1表示向后
-    private bool isMoving = false;
-    private bool isWatching = false;
+    [Header("Movement Settings")]
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float accelerationTime = 0.2f;
+    [SerializeField] private float decelerationTime = 0.1f;
     
     // 精力系统
     private EnergySystem energySystem;
     private Vector3 lastPosition;
     private float accumulatedDistance = 0f;
-    private const float ENERGY_CHECK_THRESHOLD = 0.1f; // 每累积多少距离检查一次精力消耗
+    private const float ENERGY_CHECK_THRESHOLD = 0.1f;
     
-    // 输入控制
-    private Vector2 movementInput;
-    private Vector2 mouseDirection;
-    private bool isMousePressed = false;
+    private bool isWatching = false;
     private Camera mainCamera;
     private FogOfWar fogOfWar;
-
     private GameObject visionMask;
+
+    // Movement components
+    private Rigidbody2D rb;
+    private float currentSpeed;
+    private float targetSpeed;
+    private Vector2 moveDirection;
+    private bool isMoving;
+    
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        SetupRigidbody();
+    }
+    
+    private void SetupRigidbody()
+    {
+        rb.gravityScale = 0f;
+        rb.linearDamping = 1f;
+        rb.angularDamping = 5f;
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+    }
     
     private void Start()
     {
-        // 找到最近的节点作为起始点
-        FindClosestNodeAtStart();
         fogOfWar = FindObjectOfType<FogOfWar>();
         visionMask = transform.GetChild(0).gameObject;
         
@@ -55,270 +63,92 @@ public class PlayerMovement : MonoBehaviour
             Debug.LogWarning("未找到主摄像机！鼠标控制可能无法正常工作。");
         }
         
-        // 记录初始位置用于计算移动距离
         lastPosition = transform.position;
     }
     
     private void Update()
     {
-        // 获取键盘移动输入
-        movementInput.x = Input.GetAxisRaw("Horizontal");
-        movementInput.y = Input.GetAxisRaw("Vertical");
-        
-        // 处理鼠标输入
         HandleMouseInput();
+        HandleWatchingMode();
         
-        // 选择使用哪种输入方式移动
-        Vector2 finalInput = movementInput;
-        if (useMouseControl && isMousePressed && mouseDirection.magnitude > 0.1f)
-        {
-            finalInput = mouseDirection;
-        }
-        
-        // 处理移动逻辑
-        HandleMovement(finalInput);
-
-        // 处理观察逻辑
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            isWatching = !isWatching;
-            if (isWatching)
-            {
-                // fogOfWar.visionRadius *= 3f;
-                visionMask.transform.localScale *= 2f;
-            }
-            else
-            {
-                // fogOfWar.visionRadius /= 3f;
-                visionMask.transform.localScale /= 2f;
-            }
-            
-            // fogOfWar.UpdateFogOfWar();
-        }
-        
-        // 计算移动距离并消耗精力
         if (energySystem != null && isMoving)
         {
             CalculateAndConsumeEnergy();
         }
     }
-    
-    // 处理鼠标输入
+
     private void HandleMouseInput()
     {
-        // 检测鼠标左键是否按下
-        isMousePressed = Input.GetMouseButton(0);
+        // 获取鼠标位置
+        Vector3 mousePosition = Input.mousePosition;
+        mousePosition.z = -mainCamera.transform.position.z;
+        Vector3 targetPosition = mainCamera.ScreenToWorldPoint(mousePosition);
         
-        if (isMousePressed && mainCamera != null)
+        // 计算方向
+        Vector2 direction = (targetPosition - transform.position).normalized;
+        
+        // 处理旋转
+        if (direction != Vector2.zero)
         {
-            // 获取鼠标在世界空间中的位置
-            Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorldPos.z = transform.position.z; // 保持相同的z坐标
-            
-            // 计算从玩家到鼠标位置的方向向量
-            mouseDirection = (mouseWorldPos - transform.position).normalized;
-            
-            // 可视化鼠标方向（调试用）
-            Debug.DrawRay(transform.position, mouseDirection * 2f, Color.red);
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0, 0, angle);
+        }
+        
+        // 处理移动
+        isMoving = Input.GetMouseButton(0); // 鼠标左键按住时移动
+        targetSpeed = isMoving ? moveSpeed : 0f;
+        
+        // 平滑插值当前速度
+        currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref moveDirection.y, 
+            isMoving ? accelerationTime : decelerationTime);
+        
+        // 应用移动
+        Vector2 movement = direction * currentSpeed;
+        transform.Translate(movement * Time.deltaTime, Space.World);
+    }
+    
+    private void HandleWatchingMode()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            isWatching = !isWatching;
+            if (isWatching)
+            {
+                visionMask.transform.localScale *= 2f;
+            }
+            else
+            {
+                visionMask.transform.localScale /= 2f;
+            }
         }
     }
     
-    // 计算移动距离并消耗精力
     private void CalculateAndConsumeEnergy()
     {
-        // 计算从上次位置到当前位置的距离
         float distanceMoved = Vector3.Distance(transform.position, lastPosition);
-        
-        // 累积距离
         accumulatedDistance += distanceMoved;
         
-        // 当累积距离达到阈值时，消耗精力
         if (accumulatedDistance >= ENERGY_CHECK_THRESHOLD)
         {
-            // 计算并消耗精力
             float energyCost = energySystem.CalculateMovementEnergyCost(accumulatedDistance);
-            
-            // 尝试消耗精力
             bool energyConsumed = energySystem.ConsumeEnergy(energyCost);
             
-            // 如果精力不足，停止移动
             if (!energyConsumed)
             {
                 isMoving = false;
                 Debug.Log("精力不足，无法继续移动！");
             }
             
-            // 重置累积距离
             accumulatedDistance = 0f;
         }
         
-        // 更新上次位置
         lastPosition = transform.position;
     }
     
-    // 寻找起始点最近的节点
-    private void FindClosestNodeAtStart()
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        MapNode[] allNodes = FindObjectsOfType<MapNode>();
-        
-        if (allNodes.Length == 0)
-        {
-            Debug.LogWarning("场景中没有任何节点！");
-            return;
-        }
-        
-        MapNode closestNode = null;
-        float closestDistance = float.MaxValue;
-        
-        foreach (MapNode node in allNodes)
-        {
-            float distance = Vector2.Distance(transform.position, node.transform.position);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestNode = node;
-            }
-        }
-        
-        if (closestNode != null)
-        {
-            currentNode = closestNode;
-            transform.position = closestNode.transform.position;
-            lastPosition = transform.position;
-        }
-    }
-    
-    // 处理移动逻辑
-    private void HandleMovement(Vector2 inputDirection)
-    {
-        if (inputDirection.magnitude > 0.1f)
-        {
-            // 有输入，尝试移动
-            
-            if (currentPath == null)
-            {
-                // 如果我们在节点上且没有行走的路径
-                if (currentNode != null)
-                {
-                    // 根据输入方向选择一条路径
-                    MapPath newPath = currentNode.GetPathInDirection(inputDirection);
-                    
-                    if (newPath != null)
-                    {
-                        // 预先计算移动所需的精力
-                        MapNode targetNode = (currentNode == newPath.nodeA) ? newPath.nodeB : newPath.nodeA;
-                        float pathDistance = Vector3.Distance(currentNode.transform.position, targetNode.transform.position);
-                        
-                        // 检查是否有足够的精力移动
-                        if (energySystem != null && !energySystem.HasEnoughEnergyToMove(pathDistance))
-                        {
-                            Debug.Log("精力不足，无法移动到下一个节点！");
-                            return;
-                        }
-                        
-                        // 找到了一条合适的路径
-                        currentPath = newPath;
-                        
-                        // 设置初始的T值和移动方向
-                        if (currentNode == currentPath.nodeA)
-                        {
-                            currentT = 0f;
-                            moveDirection = 1; // 向B节点移动
-                        }
-                        else
-                        {
-                            currentT = 1f;
-                            moveDirection = -1; // 向A节点移动
-                        }
-                        
-                        isMoving = true;
-                        currentNode = null; // 我们现在在路径上，不在节点上
-                    }
-                }
-            }
-            else
-            {
-                // 如果我们已经在路径上
-                
-                // 检查是否需要改变方向
-                Vector2 pathDirection = (Vector2)currentPath.GetDirectionAtPoint(currentT);
-                float dotProduct = Vector2.Dot(pathDirection * moveDirection, inputDirection.normalized);
-                
-                if (dotProduct < -0.5f) // 如果输入与当前移动方向大致相反
-                {
-                    // 反转方向
-                    moveDirection *= -1;
-                }
-                
-                // 继续沿路径移动
-                isMoving = true;
-            }
-        }
-        else
-        {
-            // 没有输入，停止移动
-            isMoving = false;
-        }
-        
-        // 执行路径移动
-        if (isMoving && currentPath != null)
-        {
-            MoveAlongPath();
-        }
-    }
-    
-    // 沿当前路径移动
-    private void MoveAlongPath()
-    {
-        // 计算移动距离
-        float distanceToMove = moveSpeed * Time.deltaTime;
-        
-        // 估计路径的总长度，用于将距离转换为T的增量
-        float pathLength = Vector3.Distance(currentPath.nodeA.transform.position, currentPath.nodeB.transform.position);
-        if (currentPath.pathType != MapPath.PathType.Straight)
-        {
-            // 对于曲线或折线，我们需要更精确的估计
-            pathLength *= 1.5f; // 简单估计，实际应基于路径形状
-        }
-        
-        // 计算t的增量
-        float deltaT = distanceToMove / pathLength;
-        
-        // 更新t值
-        currentT += deltaT * moveDirection;
-        
-        // 边界检查
-        if (currentT >= 1f)
-        {
-            // 到达了B节点
-            currentNode = currentPath.nodeB;
-            currentPath = null;
-            transform.position = currentNode.transform.position;
-            isMoving = false;
-        }
-        else if (currentT <= 0f)
-        {
-            // 到达了A节点
-            currentNode = currentPath.nodeA;
-            currentPath = null;
-            transform.position = currentNode.transform.position;
-            isMoving = false;
-        }
-        else
-        {
-            // 仍在路径上移动
-            transform.position = currentPath.GetPointOnPath(currentT);
-        }
-    }
-    
-    // 在Unity编辑器中绘制辅助信息
-    private void OnDrawGizmos()
-    {
-        if (useMouseControl && isMousePressed && mouseDirection.magnitude > 0.1f)
-        {
-            // 绘制鼠标方向
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawRay(transform.position, mouseDirection * 2f);
-        }
+        // 碰撞时停止移动
+        currentSpeed = 0f;
+        targetSpeed = 0f;
     }
 } 
