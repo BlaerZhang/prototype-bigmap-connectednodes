@@ -14,7 +14,21 @@ public class EnergySystem : MonoBehaviour
     public Image energyFillImage;      // 精力条的填充图像（可选，优先使用UIManager）
     public Color fullEnergyColor = Color.green;  // 精力充足时的颜色
     public Color lowEnergyColor = Color.red;     // 精力不足时的颜色
-    
+
+    // 新增：耐力系统
+    [Header("耐力值设置")]
+    public float maxStamina = 100f;    // 耐力值上限
+    public float currentStamina;       // 当前耐力值
+    public float movementStaminaCost = 1f;  // 每单位距离消耗的耐力值
+    public float staminaRecoveryAmount = 10f; // 每次回复的耐力值
+    public float depletedEnergyStaminaPenalty = 2.0f; // 精力耗尽时耐力消耗的倍率
+
+    [Header("耐力UI设置")]
+    public Slider staminaSlider;        // 用于显示耐力值的滑动条
+    public Image staminaFillImage;      // 耐力条的填充图像
+    public Color fullStaminaColor = Color.cyan;  // 耐力充足时的颜色
+    public Color lowStaminaColor = Color.blue;   // 耐力不足时的颜色
+
     private PlayerMovement playerMovement;
     private UIManager uiManager;
     
@@ -22,6 +36,8 @@ public class EnergySystem : MonoBehaviour
     {
         // 初始化精力值为最大值
         currentEnergy = maxEnergy;
+        // 初始化耐力值为最大值
+        currentStamina = maxStamina;
         
         // 获取玩家移动组件引用
         playerMovement = GetComponent<PlayerMovement>();
@@ -38,9 +54,18 @@ public class EnergySystem : MonoBehaviour
                 energySlider.maxValue = maxEnergy;
                 energySlider.value = currentEnergy;
             }
-            else
+            if (staminaSlider != null)
+            {
+                staminaSlider.maxValue = maxStamina;
+                staminaSlider.value = currentStamina;
+            }
+            if (energySlider == null)
             {
                 Debug.LogWarning("未找到UIManager且未直接设置精力条！精力系统将无法显示UI。");
+            }
+            if (staminaSlider == null)
+            {
+                Debug.LogWarning("未找到UIManager且未直接设置耐力条！耐力系统将无法显示UI。");
             }
         }
         else
@@ -51,10 +76,16 @@ public class EnergySystem : MonoBehaviour
                 energySlider = uiManager.energySlider;
                 energyFillImage = uiManager.energyFillImage;
             }
+            if (uiManager.staminaSlider != null)
+            {
+                staminaSlider = uiManager.staminaSlider;
+                staminaFillImage = uiManager.staminaFillImage;
+            }
         }
         
         // 更新UI显示
         UpdateEnergyUI();
+        UpdateStaminaUI();
     }
     
     void Update()
@@ -63,46 +94,34 @@ public class EnergySystem : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             RecoverEnergy(energyRecoveryAmount);
+            RecoverStamina(staminaRecoveryAmount);
         }
         
         // 更新UI显示
         UpdateEnergyUI();
+        UpdateStaminaUI();
     }
     
     // 消耗精力
     public bool ConsumeEnergy(float amount)
     {
-        // 检查是否有足够的精力
         if (currentEnergy < amount)
         {
             Debug.Log($"精力不足！需要 {amount}，当前 {currentEnergy}");
-            return false; // 精力不足
+            return false;
         }
-        
-        // 消耗精力
         currentEnergy -= amount;
-        
-        // 确保精力值不小于0
         currentEnergy = Mathf.Max(0, currentEnergy);
-        
-        // 更新UI
         UpdateEnergyUI();
-        
-        return true; // 精力消耗成功
+        return true;
     }
     
     // 恢复精力
     public void RecoverEnergy(float amount)
     {
-        // 增加精力值
         currentEnergy += amount;
-        
-        // 确保精力值不超过最大值
         currentEnergy = Mathf.Min(currentEnergy, maxEnergy);
-        
-        // 更新UI
         UpdateEnergyUI();
-        
         Debug.Log($"恢复了 {amount} 点精力，当前精力: {currentEnergy}/{maxEnergy}");
     }
     
@@ -119,26 +138,19 @@ public class EnergySystem : MonoBehaviour
         return currentEnergy >= cost;
     }
     
-    // 更新UI显示
+    // 更新精力UI显示
     private void UpdateEnergyUI()
     {
-        // 优先使用UIManager更新UI
         if (uiManager != null)
         {
             uiManager.SetEnergyValue(currentEnergy, maxEnergy);
-            
-            // 计算颜色
             float energyRatio = currentEnergy / maxEnergy;
             Color energyColor = Color.Lerp(lowEnergyColor, fullEnergyColor, energyRatio);
-            
             uiManager.SetEnergyColor(energyColor);
         }
         else if (energySlider != null)
         {
-            // 使用直接引用的UI组件
             energySlider.value = currentEnergy;
-            
-            // 根据精力值比例更新颜色
             if (energyFillImage != null)
             {
                 float energyRatio = currentEnergy / maxEnergy;
@@ -151,5 +163,63 @@ public class EnergySystem : MonoBehaviour
     public float GetEnergyRatio()
     {
         return currentEnergy / maxEnergy;
+    }
+
+    // ================== 新增：耐力相关方法 ==================
+    // 消耗耐力
+    public bool ConsumeStamina(float amount)
+    {
+        if (currentStamina < amount)
+        {
+            Debug.Log($"耐力不足！需要 {amount}，当前 {currentStamina}");
+            return false;
+        }
+        currentStamina -= amount;
+        currentStamina = Mathf.Max(0, currentStamina);
+        UpdateStaminaUI();
+        return true;
+    }
+    // 恢复耐力
+    public void RecoverStamina(float amount)
+    {
+        currentStamina += amount;
+        currentStamina = Mathf.Min(currentStamina, maxStamina);
+        UpdateStaminaUI();
+        Debug.Log($"恢复了 {amount} 点耐力，当前耐力: {currentStamina}/{maxStamina}");
+    }
+    // 计算移动消耗的耐力
+    public float CalculateMovementStaminaCost(float distance)
+    {
+        // 如果精力已耗尽，耐力消耗增加
+        if (currentEnergy <= 0)
+        {
+            return distance * movementStaminaCost * depletedEnergyStaminaPenalty;
+        }
+        return distance * movementStaminaCost;
+    }
+    // 检查是否有足够的耐力进行移动
+    public bool HasEnoughStaminaToMove(float distance)
+    {
+        float cost = CalculateMovementStaminaCost(distance);
+        return currentStamina >= cost;
+    }
+    // 更新耐力UI显示
+    private void UpdateStaminaUI()
+    {
+        if (staminaSlider != null)
+        {
+            staminaSlider.maxValue = maxStamina;
+            staminaSlider.value = currentStamina;
+            if (staminaFillImage != null)
+            {
+                float staminaRatio = currentStamina / maxStamina;
+                staminaFillImage.color = Color.Lerp(lowStaminaColor, fullStaminaColor, staminaRatio);
+            }
+        }
+    }
+    // 获取当前耐力比例
+    public float GetStaminaRatio()
+    {
+        return currentStamina / maxStamina;
     }
 } 

@@ -10,6 +10,10 @@ public class UIManager : MonoBehaviour
     public Image energyFillImage; // 精力条填充图像
     public Text energyText;       // 精力值文本（可选）
     
+    [Header("耐力UI")]
+    public Slider staminaSlider;   // 耐力条滑动条
+    public Image staminaFillImage; // 耐力条填充图像
+    
     private void Awake()
     {
         // 单例模式

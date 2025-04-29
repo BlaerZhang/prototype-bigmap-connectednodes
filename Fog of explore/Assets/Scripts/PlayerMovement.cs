@@ -130,15 +130,14 @@ public class PlayerMovement : MonoBehaviour
         
         if (accumulatedDistance >= ENERGY_CHECK_THRESHOLD)
         {
+            // 精力消耗
             float energyCost = energySystem.CalculateMovementEnergyCost(accumulatedDistance);
-            bool energyConsumed = energySystem.ConsumeEnergy(energyCost);
-            
-            if (!energyConsumed)
-            {
-                isMoving = false;
-                Debug.Log("精力不足，无法继续移动！");
-            }
-            
+            energySystem.ConsumeEnergy(energyCost);
+
+            // 耐力消耗
+            float staminaCost = energySystem.CalculateMovementStaminaCost(accumulatedDistance);
+            energySystem.ConsumeStamina(staminaCost);
+
             accumulatedDistance = 0f;
         }
         
