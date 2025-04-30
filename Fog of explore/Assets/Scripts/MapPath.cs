@@ -12,6 +12,9 @@ public class MapPath : MonoBehaviour
     public PathType pathType = PathType.Straight;
     public Transform[] controlPoints; // 用于贝塞尔曲线或折线的控制点
     
+    [Header("路径类型")]
+    public RoadType roadType = RoadType.Main; // 新增道路类型
+    
     // 路径类型枚举
     public enum PathType
     {
@@ -20,8 +23,43 @@ public class MapPath : MonoBehaviour
         Segmented    // 折线
     }
     
+    // 道路类型枚举
+    public enum RoadType
+    {
+        Main,       // 主路
+        Secondary,  // 小路
+        Gravel,      // 碎石路
+        Unpaved,     // 土路
+        Trail      // 小径
+    }
+    
     // 路径可视组件
     private LineRenderer lineRenderer;
+    
+    // 添加一个公共方法来应用样式 - 用于编辑器工具
+    public void ApplyRoadTypeStyle(Color color, float width, Material material = null)
+    {
+        if (lineRenderer == null)
+        {
+            lineRenderer = GetComponent<LineRenderer>();
+            if (lineRenderer == null) return;
+        }
+        
+        // 应用样式设置
+        lineRenderer.startWidth = width;
+        lineRenderer.endWidth = width;
+        
+        if (material != null)
+        {
+            lineRenderer.material = material;
+        }
+        
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
+        
+        // 更新路径形状
+        UpdatePathVisual();
+    }
     
     private void Awake()
     {
@@ -183,6 +221,13 @@ public class MapPath : MonoBehaviour
                 if (controlPoints == null || controlPoints.Length == 0)
                     return Vector3.Lerp(nodeA.transform.position, nodeB.transform.position, t);
                     
+                // 对于贝塞尔曲线，使用弧长参数化实现匀速运动
+                if (useArcLengthParameterization)
+                {
+                    // 使用弧长参数化t值，实现匀速移动
+                    t = ArcLengthParameterize(t);
+                }
+                    
                 if (controlPoints.Length == 1)
                     return CalculateQuadraticBezierPoint(t, nodeA.transform.position, controlPoints[0].position, nodeB.transform.position);
                     
@@ -244,6 +289,95 @@ public class MapPath : MonoBehaviour
             default:
                 return Vector3.Lerp(nodeA.transform.position, nodeB.transform.position, t);
         }
+    }
+    
+    // 控制是否使用弧长参数化（用于实现匀速移动）
+    public bool useArcLengthParameterization = true;
+    
+    // 贝塞尔曲线的弧长参数化查找表大小
+    private const int ARC_LENGTH_SAMPLES = 100;
+    private float[] arcLengthLUT = null;
+    private float totalArcLength = 0f;
+    
+    // 初始化弧长查找表
+    private void InitializeArcLengthLUT()
+    {
+        if (arcLengthLUT != null) return;
+        
+        arcLengthLUT = new float[ARC_LENGTH_SAMPLES + 1];
+        
+        // 设置起点距离为0
+        arcLengthLUT[0] = 0f;
+        
+        Vector3 prevPoint;
+        if (controlPoints.Length == 1)
+            prevPoint = nodeA.transform.position;
+        else
+            prevPoint = nodeA.transform.position;
+        
+        // 计算每个样本点之间的距离
+        float accumDistance = 0f;
+        for (int i = 1; i <= ARC_LENGTH_SAMPLES; i++)
+        {
+            float t = i / (float)ARC_LENGTH_SAMPLES;
+            Vector3 currentPoint;
+            
+            if (controlPoints.Length == 1)
+                currentPoint = CalculateQuadraticBezierPoint(t, nodeA.transform.position, controlPoints[0].position, nodeB.transform.position);
+            else
+                currentPoint = CalculateCubicBezierPoint(t, nodeA.transform.position, controlPoints[0].position, controlPoints[1].position, nodeB.transform.position);
+            
+            accumDistance += Vector3.Distance(prevPoint, currentPoint);
+            arcLengthLUT[i] = accumDistance;
+            prevPoint = currentPoint;
+        }
+        
+        // 记录曲线的总长度
+        totalArcLength = accumDistance;
+    }
+    
+    // 使用弧长参数化t值，实现匀速移动
+    private float ArcLengthParameterize(float t)
+    {
+        // 确保查找表已初始化
+        if (arcLengthLUT == null)
+        {
+            InitializeArcLengthLUT();
+        }
+        
+        // 计算目标距离
+        float targetDistance = t * totalArcLength;
+        
+        // 在查找表中找到最接近的段
+        int low = 0;
+        int high = ARC_LENGTH_SAMPLES;
+        
+        while (low < high)
+        {
+            int mid = (low + high) / 2;
+            if (arcLengthLUT[mid] < targetDistance)
+                low = mid + 1;
+            else
+                high = mid;
+        }
+        
+        // 确保索引在有效范围内
+        int index = Mathf.Clamp(low, 1, ARC_LENGTH_SAMPLES);
+        
+        // 计算两个采样点之间的插值系数
+        float lengthBefore = arcLengthLUT[index - 1];
+        float lengthAfter = arcLengthLUT[index];
+        float segmentLength = lengthAfter - lengthBefore;
+        
+        // 如果线段长度为0，直接返回当前t值
+        if (segmentLength < 0.0001f)
+            return (index - 1) / (float)ARC_LENGTH_SAMPLES;
+        
+        // 计算在这个段内的位置
+        float segmentFactor = (targetDistance - lengthBefore) / segmentLength;
+        
+        // 返回参数化后的t值
+        return ((index - 1) + segmentFactor) / ARC_LENGTH_SAMPLES;
     }
     
     // 根据插值参数获取路径上的方向

@@ -8,13 +8,20 @@ public class EnergySystem : MonoBehaviour
     public float currentEnergy;       // 当前精力值
     public float movementEnergyCost = 1f;  // 每单位距离消耗的精力值
     public float energyRecoveryAmount = 10f; // 每次回复的精力值
-    
+    public float energyCostAmount = 10f; // 每次消耗的精力值
+
     [Header("UI设置")]
     public Slider energySlider;        // 用于显示精力值的滑动条（可选，优先使用UIManager）
     public Image energyFillImage;      // 精力条的填充图像（可选，优先使用UIManager）
     public Color fullEnergyColor = Color.green;  // 精力充足时的颜色
     public Color lowEnergyColor = Color.red;     // 精力不足时的颜色
-    
+
+    [Header("昼夜表现")]
+    public SpriteRenderer mapRenderer;
+    public SpriteRenderer fogRenderer;
+    public Color dayColor;
+    public Color nightColor;
+
     private PlayerMovement playerMovement;
     private UIManager uiManager;
     
@@ -55,6 +62,9 @@ public class EnergySystem : MonoBehaviour
         
         // 更新UI显示
         UpdateEnergyUI();
+
+        // 更新昼夜表现
+        UpdateDayNight();
     }
     
     void Update()
@@ -64,9 +74,18 @@ public class EnergySystem : MonoBehaviour
         {
             RecoverEnergy(energyRecoveryAmount);
         }
+
+        // 按下Backspace键消耗精力
+        if (Input.GetKeyDown(KeyCode.Backspace))
+        {
+            ConsumeEnergy(energyCostAmount);
+        }
         
         // 更新UI显示
         UpdateEnergyUI();
+
+        // 更新昼夜表现
+        UpdateDayNight();
     }
     
     // 消耗精力
@@ -117,6 +136,14 @@ public class EnergySystem : MonoBehaviour
     {
         float cost = CalculateMovementEnergyCost(distance);
         return currentEnergy >= cost;
+    }
+
+    // 更新昼夜表现
+    private void UpdateDayNight()
+    {
+        Color currentColor = Color.Lerp(nightColor, dayColor, GetEnergyRatio());
+        mapRenderer.color = currentColor;
+        fogRenderer.color = new Color(currentColor.r * 0.5f, currentColor.g * 0.5f, currentColor.b * 0.5f, 1f);
     }
     
     // 更新UI显示

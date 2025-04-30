@@ -437,7 +437,7 @@ public class SpriteRandomizer : EditorWindow
                             renderer.sprite = selectedSprite;
                         }
                     break;
-                    }
+                }
                 }
                 
                 // 处理指示器
