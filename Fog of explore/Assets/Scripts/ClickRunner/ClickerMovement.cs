@@ -31,6 +31,9 @@ public class ClickerMovement : OverridableMonoBehaviour
     public float speedChangeRate = 0.2f; // 速度变化率，用于平滑速度变化
     public float lowSpeedStopDelay = 1.5f; // 低速状态停止延迟时间
     private float lowSpeedTimer = 0f; // 计时器，跟踪低速状态持续时间
+
+    [Header("3D动画表现")]
+    public Animator runningManAnimator;
     
     [Header("调试")]
     public bool showDebugInfo = true;
@@ -122,6 +125,7 @@ public class ClickerMovement : OverridableMonoBehaviour
             {
                 // 第一次点击，开始奔跑
                 isRunning = true;
+                runningManAnimator.SetBool("isRunning", true);
                 lastClickButtonWasLeft = isLeftClick;
                 lastClickTime = Time.time;
                 lowSpeedTimer = 0f;
@@ -172,6 +176,7 @@ public class ClickerMovement : OverridableMonoBehaviour
     private void SafeStop()
     {
         isRunning = false;
+        runningManAnimator.SetBool("isRunning", false);
         currentSpeed = 0f;
         
         // 重置到初始点击间隔，但给玩家一个稍微宽松的开始点
@@ -192,7 +197,7 @@ public class ClickerMovement : OverridableMonoBehaviour
     {
         isRunning = false;
         currentSpeed = 0f;
-        
+        runningManAnimator.SetBool("isRunning", false);
         // 重置节奏和间隔
         currentClickInterval = maxClickInterval;
         lastActualInterval = maxClickInterval;
@@ -208,6 +213,7 @@ public class ClickerMovement : OverridableMonoBehaviour
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 directionToMouse = (mousePosition - (Vector2)transform.position).normalized;
         transform.rotation = Quaternion.LookRotation(Vector3.forward, directionToMouse);
+        runningManAnimator.transform.rotation = Quaternion.Euler(0, -transform.rotation.eulerAngles.z, 0);
         transform.position += (Vector3)directionToMouse * speed * Time.deltaTime;
     }
 }
