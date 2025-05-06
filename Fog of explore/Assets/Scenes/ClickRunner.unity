@@ -387,6 +387,7 @@ GameObject:
   - component: {fileID: 1800822559}
   - component: {fileID: 1800822560}
   - component: {fileID: 1800822561}
+  - component: {fileID: 1800822562}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -471,7 +472,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1800822558}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 558c74c261565fa4fb44b2e9bdf8c0a6, type: 3}
   m_Name: 
@@ -489,6 +490,26 @@ MonoBehaviour:
   lowSpeedStopDelay: 2
   runningManAnimator: {fileID: 919132147661301037}
   showDebugInfo: 1
+--- !u!114 &1800822562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1800822558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f50f06cb176d59942bd85a8f80399a4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  addOnEnable: 1
+  removeOnDisable: 1
+  factorDecreaseRate: 1
+  factorIncreasePerClick: 1
+  isRunning: 0
+  maxSpeed: 5
+  minSpeed: 0.5
+  runningManAnimator: {fileID: 919132147661301037}
 --- !u!1 &1951998437
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,8 +870,8 @@ Transform:
   m_GameObject: {fileID: 919132147661301036}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.01, y: -10, z: 10}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalPosition: {x: 9.6, y: -10, z: 10}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 8155812262092496817}
